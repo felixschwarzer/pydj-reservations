@@ -1,0 +1,279 @@
+{% load mathfilters %}
+{% load js %}
+{% load intpoint %}
+{% load static %}
+
+<!--
+WHEN changing grid var, for example from 6 hours to 9 hours:
+
+px values, percentages and decimals (db) all derive from hours.
+=>
+decimal form of 19:00 - 22:15 = 0 - 3.25
+decimal form of 19:30 - 00:45 = 0.5 - 5.75
+
+min.steps are at 15min
+=> in 6 hours - 1h = 1/6 - 15min = 1h/4 => 15min = 1/24
+=> in 9 hours - 1h = 1/9 - 15min = 1h/4 => 15min = 1/36
+//using in range(37) ensures looking at the last step as well (if rounding up, could be the last part)
+
+=>
+percentage % value for pos of item (given in decimal form)
+Q: wich ratio has value to max-value of hours?
+A: val/MAX (1.5/6)
+in % = 1.5/MAX*100
+//in docs defined at
+templates/list.html
+    - **with left:res.x/9*100, var setup used for width calc
+    - left:res.x/9*100, used directly as item.pos.left="" value
+    - right:res.y/9*100, used directly as item.pos.right="" value
+    - width:res.y/9*100-left**, used directly as item.width="" value
+    - res_x = (x/$(this).width()*100)*9/100;, NEW ITEM calc res_x to save in form.input.hidden.x
+    - when calc grid size
+      - var grid_x = $('td.blocks-container').width()/36;
+        grid size is updated if window.size changes, to keep static px value representing 15min steps
+    - res_x = Math.round(pos_x/$(this).parent().width()*100)*9/100;, on 'resizestop', 'dragstop'
+      // calc values and round => val === db conform
+views.py
+    - in range(37): creates array with every value that is needed to count to 9(MAX HOUR VALUE), using quarter(0.25, STEP VALUE)steps
+    - if res.y > 7 ? res.y = 7,  reservation cant be longer than 7 hous (MAX RES_TIME VALUE)
+Style CSS
+    - background: lineargradient()...;, background pattern need to be manually adapted if MAX HOUR VAUE or STEPS VALUE CHANGE
+percentages are used to calc the grid pattern, e.g grid line every three hours = 33.33%
+
+
+ -->
+<!DOCTYPE html>
+<html lang="de-De">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Reservationbook: "Die Bar" - 2019</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"   integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="   crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"   integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="   crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+</head>
+<body>
+{% if user.is_authenticated %}
+<div style="text-align:right; padding:8px 10px;">
+    <span><small class="mono">Current user: <b>{{ user.get_username }}</b> | </small></span>
+    <a href="/api/logout"><small class="mono">Logout</small></a>
+</div>
+{% endif %}
+<div class="container">
+    <h1>Reservations for: {{ current_date|date:'D, d.m.Y'}}</h1>
+    <span class="data_toggle"><span class="date_show_txt mono" style="display:none;">Show Datelist</span><span class="date_hide_txt mono" style="display:none;">Hide Datelist</span></span>
+    <ul class="date_list">
+    {% for day in coming_days%}
+        <li class="date_item" style="display:inline-block"><a href="/api/{{ day|date:'Y-m-d' }}/" class="mono">{{ day|date:'D, d.m.Y' }}</a></li>
+    {%endfor%}
+    </ul>
+    <table border="1">
+        <thead>
+        <tr>
+            <th class="left-col">Seat</th>
+            <th class="blocks-container">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <div class="row">
+                                <div class="col-sm-4"><time>19:00</time></div>
+                                <div class="col-sm-4"><time>20:00</time></div>
+                                <div class="col-sm-4"><time>21:00</time></div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="row">
+                                <div class="col-sm-4"><time>22:00</time></div>
+                                <div class="col-sm-4"><time>23:00</time></div>
+                                <div class="col-sm-4"><time>00:00</time></div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="row">
+                                <div class="col-sm-4"><time>01:00</time></div>
+                                <div class="col-sm-4"><time>02:00</time></div>
+                                <div class="col-sm-4"><time>03:00</time></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </th>
+        </tr>
+        </thead>
+        <tbody>
+
+        {% for seat in seats %}
+            <tr tabindex="-1">
+                <th class="left-col">{{forloop.counter}}</th>
+                <td class="blocks-container">
+                    {% for res in reservs %}
+                    {%if forloop.parentloop.counter == res.seat%}
+                    {% with left=res.x|div:MAX_HOUR|mul:100 %}
+                    <div class="form_box_container" tabindex="-1" style="left: {{res.x|div:MAX_HOUR|mul:100|intpoint}}%; right: {{res.y|div:MAX_HOUR|mul:100|intpoint}}%; width: {{res.y|div:MAX_HOUR|mul:100|sub:left|intpoint}}%;">
+                    {%endwith%}
+                        <form method="POST" class="post-form row">{% csrf_token %}
+                            <input type="hidden" name="seat" id="id_seat" value="{{forloop.parentloop.counter}}"/>
+                            <input type="hidden" name="id" id="id_id" value="{{res.id}}"/>
+                            <input type="hidden" name="x" id="id_x" value="{{res.x}}">
+                            <input type="hidden" name="y" id="id_y" value="{{res.y}}">
+                            <div class="col-sm-4">{{res.secret}}<input type="text" name="secret" id="id_secret" value="{{res.secret}}"></div>
+                            <div class="col-sm-4">{{res.note}}<input type="text" name="note" id="id_note" value="{{res.note}}"></div>
+                            <div class="col-sm-4"><button type="submit" class="save btn btn-default">Save</button></div>
+                        </form>
+                        <div class="log">
+                            <h2>Reservation log for {{res.note}}</h2>
+                            {% for log in logs %}
+                                {% if log.res_id == res.id %}
+                                    <p>seat: {{log.seat}}, secret: {{log.secret}}</p>
+                                    <p><small>{{log.res_creator}},{{log.updated_by}},{{log.creation_date}},{{log.created_at}}</small></p>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {%endif%}
+                    {%endfor%}
+                    <form method="POST" class="post-form empty_form">{% csrf_token %}
+                        <input type="hidden" name="creator" id="creator" value="{{user.id}}">
+                        <input type="hidden" name="seat" id="seat" value="{{forloop.counter}}"/>
+                        <div><input type="text" name="secret" id="secret"></div>
+                        <div><input type="hidden" name="x" id="x"></div>
+                        <div><input type="hidden" name="y" id="y"></div>
+                        <div><input type="text" name="note" id="note"></div>
+                        <button type="submit" class="save btn btn-default">Save</button>
+                    </form>
+                </td>
+            </tr>
+        {%endfor%}
+        </tbody>
+
+    </table>
+
+    </div>
+<script>
+
+$(document).ready(function() {
+
+    var MAX_HOUR = {{ MAX_HOUR|js}}
+    var MAX_RES_TIME = {{ MAX_RES_TIME|js}}
+    var DEF_RES_TIME = {{ DEF_RES_TIME|js}}
+    var MIN_STEPS = {{ MIN_STEPS|js}}
+
+  $('td.blocks-container').find('form.empty_form').hide();
+  var cc = 0;
+  $('td.blocks-container').on("dblclick", function(e) {
+     var el = $(this).find('form.empty_form');
+     if(cc == 0){
+         var x = e.pageX - $(this).offset().left;
+         var y = e.pageY - $(this).offset().top;
+         el.css('position', 'absolute');
+         el.css("left", x);
+         el.css("top", y);
+         res_x = (x/$(this).width()*100)*MAX_HOUR/100;
+         el.find('input#x').val(res_x);
+         var res_y = res_x + DEF_RES_TIME;
+         el.find('input#y').val(res_y);
+         el.show();
+         cc = 1;
+     }
+   });
+   $('td.blocks-container').on("click", function(e) {
+       $('form.empty_form').hide();
+       $('.log').css('display', 'none');
+       cc = 0;
+   });
+
+   $('td.blocks-container .form_box_container').on('dblclick', function(e){
+       e.stopPropagation();
+       $(this).find('.log').show();
+   });
+   $('td.blocks-container .form_box_container').on('click', function(e){
+       e.stopPropagation();
+       $(this).focus();
+   });
+   $('td.blocks-container form.empty_form').on('click', function(e){
+       e.stopPropagation();
+   });
+
+   $('td.blocks-container .form_box_container').on('keyup', function(e){
+       if(e.keyCode == 8){
+           // 8 is backspace
+          var id =  $(this).find('input#id_id').val();
+          var res_note =  $(this).find('input#id_note').val();
+          var rem = confirm('Möchten Sie Reservierung für '+ res_note+ ' wirklich löschen?')
+            if(rem) {
+                window.location.href = "/api/remove/"+id;
+            }
+       }
+   });
+
+    grid_divisor = MAX_HOUR/MIN_STEPS;
+    var grid_x = Math.round($('td.blocks-container').width()/grid_divisor);
+    console.log(grid_x+" / "+$('td.blocks-container').width()+" / "+MAX_HOUR+" / "+MIN_STEPS);
+   $(window).on('resize', function(e){
+        grid_x = Math.round($('td.blocks-container').width()/grid_divisor);
+        console.log(grid_x);
+
+   });
+   $('.form_box_container').resizable({
+       containment: "parent",
+       //grid: [grid_x, 10],
+       handles: "e, w",
+   });
+   $('.form_box_container').draggable({
+       containment: "parent",
+       //grid: [grid_x, 10],
+       axis: "x",
+   });
+   $('.form_box_container').on('resizestop', function(e, ui){
+        pos_x = ui.position.left;
+        res_x = Math.round(pos_x/$(this).parent().width()*100)*MAX_HOUR/100;
+        if(res_x == 0){
+            res_x = 0.1;
+        }
+        pos_y = ui.position.left + ui.size.width;
+        res_y = Math.round(pos_y/$(this).parent().width()*100)*MAX_HOUR/100;
+        $(this).find('button.save').show();
+        $(this).find('input#id_x').val(res_x);
+        $(this).find('input#id_y').val(res_y);
+   });
+
+   $('.form_box_container').on('dragstop', function(e, ui){
+        pos_x = ui.position.left;
+        console.log(pos_x);
+        res_x = Math.round(pos_x/$(this).parent().width()*100)*MAX_HOUR/100;
+        console.log(res_x);
+        if(res_x == 0){
+            res_x = 0.1;
+        }
+        pos_y = ui.position.left + $(this).width() + 20 //20px padding, if not added it returns y value less than before ->smaller elem;
+        console.log($(this).width());
+        console.log(pos_y);
+        res_y = Math.round(pos_y/$(this).parent().width()*100)*MAX_HOUR/100;
+        console.log(res_y);
+        $(this).find('button.save').show();
+        $(this).find('input#id_x').val(res_x);
+        $(this).find('input#id_y').val(res_y);
+   });
+
+})
+$('input[name="seat"]').hide();
+
+$('.date_list').hide();
+$('.date_show_txt').show();
+$('.date_show_txt').on('click', function() {
+    $('.date_list').show();
+    $('.date_show_txt').hide();
+    $('.date_hide_txt').show();
+});
+$('.date_hide_txt').on('click', function() {
+    $('.date_list').hide();
+    $('.date_show_txt').show();
+    $('.date_hide_txt').hide();
+});
+
+</script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+{% load mathfilters %}
+{% load js %}
+{% load intpoint %}
+{% load static %}
+
+<!--
+WHEN changing grid var, for example from 6 hours to 9 hours:
+
+px values, percentages and decimals (db) all derive from hours.
+=>
+decimal form of 19:00 - 22:15 = 0 - 3.25
+decimal form of 19:30 - 00:45 = 0.5 - 5.75
+
+min.steps are at 15min
+=> in 6 hours - 1h = 1/6 - 15min = 1h/4 => 15min = 1/24
+=> in 9 hours - 1h = 1/9 - 15min = 1h/4 => 15min = 1/36
+//using in range(37) ensures looking at the last step as well (if rounding up, could be the last part)
+
+=>
+percentage % value for pos of item (given in decimal form)
+Q: wich ratio has value to max-value of hours?
+A: val/MAX (1.5/6)
+in % = 1.5/MAX*100
+//in docs defined at
+templates/list.html
+    - **with left:res.x/9*100, var setup used for width calc
+    - left:res.x/9*100, used directly as item.pos.left="" value
+    - right:res.y/9*100, used directly as item.pos.right="" value
+    - width:res.y/9*100-left**, used directly as item.width="" value
+    - res_x = (x/$(this).width()*100)*9/100;, NEW ITEM calc res_x to save in form.input.hidden.x
+    - when calc grid size
+      - var grid_x = $('td.blocks-container').width()/36/4;
+      //grid size could be exactly equivalent to 15min steps,
+        but as CSS pattern bg is not accurate enough grid size is defined alot smaller ( /4 )
+        to allow more accuracy in adapting to pattern visually.
+        still, values not conforming with set steps (15min) will be adapted in views.py
+        grid size is updated if window.size changes, to keep static px value representing 15min steps
+    - res_x = Math.round(pos_x/$(this).parent().width()*100)*9/100;, on 'resizestop', 'dragstop'
+      // calc values and round => val === db conform
+views.py
+    - in range(37): creates array with every value that is needed to count to 9(MAX HOUR VALUE), using quarter(0.25, STEP VALUE)steps
+    - if res.y > 7 ? res.y = 7,  reservation cant be longer than 7 hous (MAX RES_TIME VALUE)
+Style CSS
+    - background: lineargradient()...;, background pattern need to be manually adapted if MAX HOUR VAUE or STEPS VALUE CHANGE
+percentages are used to calc the grid pattern, e.g grid line every three hours = 33.33%
+
+
+ -->
+<!DOCTYPE html>
+<html lang="de-De">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"   integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="   crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"   integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="   crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+</head>
+<body>
+<h1>Login Page</h1>
+{%if not msg == ''%}
+<p>{{msg}}</p>
+{%endif%}
+<form method="post" action="{% url 'loginView' %}">
+{% csrf_token %}
+<table>
+<tr>
+    <td>{{ form.username.label_tag }}</td>
+    <td>{{ form.username }}</td>
+</tr>
+<tr>
+    <td>{{ form.password.label_tag }}</td>
+    <td>{{ form.password }}</td>
+</tr>
+</table>
+
+<input type="submit" value="login">
+<input type="hidden" name="next" value="{{ next }}">
+</form>
+</body>
+</html>

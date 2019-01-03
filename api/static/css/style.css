@@ -1,0 +1,223 @@
+/* Settings */
+:root {
+  --offset: 0rem;
+  --max_width: 72rem;
+  --columns: 36;
+  --columns-third: 3;
+  --columns-ninth: 9;
+  --gutter: 1px;
+  --baseline: 100px;
+  --baseline-shift: 0rem;
+  --color: rgba(230,230,230, 0.8);
+  --color-dark: gray;
+  --color-text: hsla(204, 80%, 72%, 1);
+  --media-query: 'base';
+}
+
+/* Helper variables */
+:root {
+  --repeating-width: calc(100% / var(--columns));
+  --repeating-width-third: calc(100% / var(--columns-third));
+  --repeating-width-ninth: calc(100% / var(--columns-ninth));
+  --column-width: calc((100% / var(--columns)) - var(--gutter));
+  --background-width: calc(100% + var(--gutter));
+  --background-columns: repeating-linear-gradient(
+    to right,
+    var(--color),
+    var(--color) 1px,
+    transparent 1px,
+    transparent var(--repeating-width)
+  );
+  --background-columns-third: repeating-linear-gradient(
+    to right,
+    var(--color-dark),
+    var(--color-dark) 2px,
+    transparent 2px,
+    transparent var(--repeating-width-third)
+  );
+  --background-columns-ninth: repeating-linear-gradient(
+    to right,
+    var(--color-dark),
+    var(--color-dark) 1px,
+    transparent 1px,
+    transparent var(--repeating-width-ninth)
+  );
+  --background-baseline: repeating-linear-gradient(
+    to bottom,
+    var(--color-dark),
+    var(--color-dark) 1px,
+    transparent 1px,
+    transparent var(--baseline)
+  );
+}
+
+.mono {
+    font-family: Courier Prime, Courier, Andale Mono, Source Code Pro, monospace !important;
+}
+
+h1, h2, h3, h4, span, p, li, ul, a, label, input, textarea, html, body {
+    font-family: Baskerville, Georgia, Cambria, Times New Roman, cursive;
+}
+
+textarea {
+    height: 50px;
+    width:180px;
+}
+table {
+    border:1px solid gray;
+    border-top: 0;
+}
+.date_show_txt, .date_hide_txt {
+    cursor:pointer;
+    display: inline-block;
+    margin:15px 0;
+}
+.date_list {
+    text-align: center;
+}
+.date_list .date_item a {
+    height:30px;
+    display: block;
+    padding:0 10px;
+    line-height: 30px;
+    border-left: 1px solid;
+    border-right: 1px solid;
+    margin:15px 10px;
+}
+td.blocks-container, th.blocks-container{
+    position: relative;
+    width:80vw;
+    text-align: left;
+    height: 60px;
+    border:none;
+    outline:none;
+    border-collapse: inherit;
+    -webkit-border-horizontal-spacing: 0px;
+    -webkit-border-vertical-spacing: 0px;
+    background-image: var(--background-columns), var(--background-columns-third), var(--background-columns-ninth), var(--background-baseline);
+    background-size: var(--background-width) 100%;
+    background-position: 0 var(--baseline-shift);
+}
+td.blocks-container div.form_box_container {
+    position: absolute;
+    top: 10px;
+    padding:5px 10px 0px 10px;
+    border-top: 5px solid rgba(84, 84, 84, .8);
+    border-radius: 2px;
+    background-color: rgba(222, 222, 215, .8);
+    box-sizing: border-box;
+    background-clip: padding-box;
+    cursor: default;
+    height:40px;
+    transition: transform 0.26s;
+    text-align: justify;
+}
+td.blocks-container div.form_box_container::before {
+    content: "";
+    display: block;
+    cursor: default;
+    position: absolute;
+    height:12px;
+    width:100%;
+    padding:0px 10px;
+    left:0;
+    top: -15px;
+    background:transparent;
+}
+td.blocks-container div.form_box_container::after {
+    content: "";
+    display: block;
+    position: absolute;
+    cursor:default;
+    height:12px;
+    width:100%;
+    padding:0px 10px;
+    left:0;
+    bottom: -12px;
+    background:transparent;
+}
+td.blocks-container div.form_box_container:hover {
+    cursor: pointer;
+}
+td.blocks-container div.form_box_container:focus {
+    outline: none;
+    border-width: 5px 1px 1px 1px;
+    border-color: #545454;
+    border-style: solid;
+    cursor: pointer;
+}
+
+td.blocks-container div.form_box_container form > div {
+    display: inline-block;
+    width:32%;
+}
+td.blocks-container div.form_box_container form > div input {
+    display:none;
+    position: absolute;
+    top: -3px;
+    width:85%;
+    border:none;
+}
+td.blocks-container div.form_box_container form > div button.save {
+    display: none;
+}
+td.blocks-container div.form_box_container .log {
+    position:fixed;
+    z-index: 999;
+    width:100vw;
+    left:0;
+    top:0;
+    background-color:#fff;
+    background-size: 100%;
+    background-image: none;
+    padding:20px 15px;
+    height: 40vh;
+    border-left: 10px solid #545454;
+    overflow-y: scroll;
+    display:none;
+    opacity: 1;
+    box-shadow: 0px 0px 10px -4px #858585;
+}
+
+td.blocks-container form.empty_form {
+    display: none;
+    position: absolute;
+    top:0;
+    padding: 5px 10px;
+    background: #fbfbfb;
+    border:1px solid #efefef;
+    border-top: 4px solid rgba(84,84,84,.8);
+    border-radius: 2px;
+    box-shadow: 0px 6px 25px -8px #4d4d4d;
+    z-index: 9999;
+}
+table th.left-col {
+    width:50px;
+    text-align: center;
+    border-right: 0px;
+    border:1px solid gray;
+    border-left:0;
+}
+table th.right-col {
+    border:1px solid gray;
+    border-right:0;
+}
+table tr:focus, input:focus, textarea:focus, button:focus, select:focus {
+    outline: none;
+    box-shadow: none;
+}
+table tr:focus, input:active, textarea:active, button:active, select:active {
+    outline: none;
+    box-shadow: none;
+}
+.ui-resizable { position: relative;}
+.ui-resizable-handle { position: absolute;font-size: 0.1px; display: block; }
+.ui-resizable-disabled .ui-resizable-handle, .ui-resizable-autohide .ui-resizable-handle { display: none; }
+.ui-resizable-n { cursor: n-resize; height: 7px; width: 100%; top: -5px; left: 0; }
+.ui-resizable-s { cursor: s-resize; height: 7px; width: 100%; bottom: -5px; left: 0; }
+.ui-resizable-e { cursor: e-resize; width: 7px; right: -5px; top: 0; height: 100%; }
+.ui-resizable-w { cursor: w-resize; width: 7px; left: -5px; top: 0; height: 100%; }
+.ui-resizable-se { cursor: se-resize; width: 12px; height: 12px; right: 1px; bottom: 1px; }
+.ui-resizable-sw { cursor: sw-resize; width: 9px; height: 9px; left: -5px; bottom: -5px; }
+.ui-resizable-nw { cursor: nw-resize; width: 9px; height: 9px; left: -5px; top: -5px; }
+.ui-resizable-ne { cursor: ne-resize; width: 9px; height: 9px; right: -5px; top: -5px;}
