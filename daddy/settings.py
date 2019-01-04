@@ -40,8 +40,8 @@ INSTALLED_APPS = [
     'api',
     'widget_tweaks',
     'mathfilters',
-    # Channels code - see v3
-    #'channels',
+    # Channels code
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -75,8 +75,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'daddy.wsgi.application'
 
-# Channels code - see v3
-#ASGI_APPLICATION = 'api.routing.application'
+# Channels code
+ASGI_APPLICATION = 'api.routing.application'
+
 
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
@@ -87,16 +88,15 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
-# Channels code - see v3
-# CHANNEL_LAYERS = {
-#     "default": {
-#         "BACKEND": "asgi_redis.RedisChannelLayer",
-#         "CONFIG": {
-#             "hosts": [os.environ.get('REDIS_URL', 'redis://localhost:6379')],
-#         },
-#         "ROUTING": "api.routing.channel_routing",
-#     },
-# }
+# Channels code
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("localhost", 6379)],
+        },
+    },
+}
 
 
 # Password validation
